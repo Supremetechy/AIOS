@@ -1,0 +1,53 @@
+name: Build AI-OS ISO
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          grub-pc-bin \
+          grub-common \
+          xorriso \
+          mtools
+    
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
+        components: rust-src
+    
+    - name: Build Rust kernel
+      run: |
+        cd kernel_rs
+        cargo build --release
+    
+    - name: Build ISO
+      run: |
+        ./build_iso.sh
+    
+    - name: Upload ISO artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: aios-iso
+        path: aios.iso
+        retention-days: 30
+    
+    - name: Test with QEMU
+      run: |
+        sudo apt-get install -y qemu-system-x86
+        timeout 30s ./test_qemu_simple.sh || true

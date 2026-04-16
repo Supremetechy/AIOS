@@ -1,0 +1,18 @@
+# AI-OS Onboarding GUI Requirements
+# Install with: pip install -r requirements_gui.txt
+
+# Core GUI framework
+PyQt6>=6.4.0
+
+# Multimedia support (try both options)
+# Option 1: PyQt6-Multimedia (preferred, if available)
+# PyQt6-Multimedia>=6.4.0
+
+# Option 2: Alternative video support using opencv
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# Already required by AI-OS kernel
+# (listed here for completeness)
+# psutil
+# GPUtil

@@ -1,0 +1,138 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                     AI-OS ON-DEVICE AI ARCHITECTURE                           ║
+║                        Complete Integration Map                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                              USER INTERACTION                                 │
+│  ┌─────────────────┐      ┌──────────────────┐      ┌──────────────────┐    │
+│  │  VGA Display    │◄─────│  Conversation    │─────►│  Keyboard Input  │    │
+│  │  (80x25 Text)   │      │  Manager         │      │  (PS/2 + IRQ)    │    │
+│  └─────────────────┘      └──────────────────┘      └──────────────────┘    │
+│           ▲                        ▲                          │               │
+│           │                        │                          │               │
+│           │         ┌──────────────┴───────────────┐         │               │
+│           │         │  AI Subsystem (Rust)         │         │               │
+│           │         │  kernel_rs/src/ai/           │         │               │
+│           │         └──────────────┬───────────────┘         │               │
+│           │                        │                          │               │
+└───────────┼────────────────────────┼──────────────────────────┼───────────────┘
+            │                        │                          │
+            │                        ▼                          │
+┌───────────┼────────────────────────────────────────────────────┼───────────────┐
+│           │              AI CORE COMPONENTS                    │               │
+│           │                                                    │               │
+│  ┌────────┴─────────┐    ┌──────────────────┐    ┌──────────┴──────────┐    │
+│  │  Response        │◄───│  llama.cpp FFI   │───►│  User Input         │    │
+│  │  Formatter       │    │  Bindings        │    │  Parser             │    │
+│  └──────────────────┘    │  (ai/llama.rs)   │    └─────────────────────┘    │
+│                          └─────────┬─────────┘                               │
+│                                    │                                         │
+│                          ┌─────────▼──────────┐                             │
+│                          │  Model Loader      │                             │
+│                          │  (ai/model_loader) │                             │
+│                          └─────────┬──────────┘                             │
+│                                    │                                         │
+└────────────────────────────────────┼─────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          LLAMA.CPP INFERENCE ENGINE                         │
+│  ┌───────────────┐  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐ │
+│  │ Tokenizer     │─►│ Transformer  │─►│ Sampling     │─►│ Detokenizer  │ │
+│  │ (Text→Tokens) │  │ Layers (32)  │  │ (Greedy/Top) │  │ (Tokens→Text)│ │
+│  └───────────────┘  └──────────────┘  └──────────────┘  └───────────────┘ │
+│                            ▲                                                │
+│                            │                                                │
+│                     ┌──────┴────────┐                                       │
+│                     │  Model Weights│                                       │
+│                     │  Gemma 2B IT  │                                       │
+│                     │  Q4_K_M GGUF  │                                       │
+│                     │  (2.5 GB)     │                                       │
+│                     └───────────────┘                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                     ▲
+                                     │
+┌────────────────────────────────────┼─────────────────────────────────────────┐
+│                        SYSTEM CONTEXT BRIDGE                │                │
+│  ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐     │
+│  │ Hardware         │───►│ Context          │───►│ Prompt           │     │
+│  │ Detection        │    │ Collector        │    │ Builder          │     │
+│  │ (Python)         │    │ (ai/context.rs)  │    │                  │     │
+│  └──────────────────┘    └──────────────────┘    └──────────────────┘     │
+│         │                                                                   │
+│         ├─► CPU Info (cores, freq, vendor)                                 │
+│         ├─► GPU Info (NVIDIA/AMD/Intel, VRAM)                              │
+│         ├─► Memory (total, available, used)                                │
+│         ├─► Storage (devices, capacity, SSD/HDD)                           │
+│         └─► Network (interfaces, addresses)                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                     ▲
+                                     │
+┌────────────────────────────────────┼─────────────────────────────────────────┐
+│                           KERNEL SUBSYSTEMS                 │                │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+│  │   GDT    │  │   IDT    │  │  Memory  │  │   VGA    │  │ Keyboard │    │
+│  │  (CPU)   │  │  (IRQ)   │  │  (Heap)  │  │ (Display)│  │  (Input) │    │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+│  │   PCI    │  │   GPU    │  │  Serial  │  │   VFS    │  │ Security │    │
+│  │  (Scan)  │  │ (Driver) │  │  (Debug) │  │  (File)  │  │  (RBAC)  │    │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                     ▲
+                                     │
+┌────────────────────────────────────┼─────────────────────────────────────────┐
+│                              BOOT SEQUENCE                  │                │
+│                                                                              │
+│  1. BIOS/UEFI → Load Bootloader                                            │
+│  2. GRUB → Load Kernel + Initramfs                                          │
+│  3. Kernel Init → Setup GDT, IDT, Memory                                    │
+│  4. Driver Init → PCI, VGA, Keyboard, Serial                                │
+│  5. AI Init → llama.cpp backend + model loading  ⭐                         │
+│  6. Context Collection → Hardware detection + JSON                          │
+│  7. AI Conversation → Interactive loop with user  ⭐                        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          DATA FLOW EXAMPLE                                   │
+│                                                                              │
+│  User Input: "What GPU did you detect?"                                     │
+│       │                                                                      │
+│       ▼                                                                      │
+│  Keyboard IRQ → Input Buffer → Conversation Manager                         │
+│       │                                                                      │
+│       ▼                                                                      │
+│  Context Collector → Build Prompt:                                          │
+│     "System: AI-OS, CPU: i7-9700K, GPU: RTX 3080, RAM: 32GB                │
+│      User: What GPU did you detect?                                         │
+│      Assistant:"                                                             │
+│       │                                                                      │
+│       ▼                                                                      │
+│  llama.cpp FFI → Tokenize → Inference → Sample → Detokenize                │
+│       │                                                                      │
+│       ▼                                                                      │
+│  Response: "I detected an NVIDIA RTX 3080 with 10GB VRAM..."               │
+│       │                                                                      │
+│       ▼                                                                      │
+│  VGA Display → Render to screen                                             │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                          IMPLEMENTATION STATUS                                ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  ✅ AI Subsystem Module          (kernel_rs/src/ai/mod.rs)                   ║
+║  ✅ llama.cpp FFI Bindings       (kernel_rs/src/ai/llama.rs)                 ║
+║  ✅ Context Collector            (kernel_rs/src/ai/context.rs)               ║
+║  ✅ Conversation Manager          (kernel_rs/src/ai/conversation.rs)         ║
+║  ✅ Model Loader                  (kernel_rs/src/ai/model_loader.rs)         ║
+║  ✅ Build Scripts                 (build_llama.sh, build_iso_with_ai.sh)     ║
+║  ✅ Kernel Integration            (main.rs, init.rs modified)                ║
+║  ✅ Documentation                 (QUICKSTART_AI.md, models/README.md)       ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  Status: READY FOR BUILD AND TEST                                            ║
+║  Next: Download model → Build ISO → Test in QEMU                             ║
+╚═══════════════════════════════════════════════════════════════════════════════╝

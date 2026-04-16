@@ -1,0 +1,53 @@
+{
+  "hostname": "MacBook-Pro.local",
+  "os_type": "Darwin",
+  "os_version": "Darwin Kernel Version 24.6.0: Wed Mar 25 21:38:31 PDT 2026; root:xnu-11417.140.69.709.8~3/RELEASE_ARM64_T6000",
+  "kernel_version": "24.6.0",
+  "architecture": "arm64",
+  "processors": [
+    {
+      "processor_type": "cpu",
+      "vendor": "apple",
+      "model": "Apple M1 Pro",
+      "cores": 10,
+      "threads": 10,
+      "frequency_mhz": 0.0,
+      "capabilities": [],
+      "memory_gb": null,
+      "compute_capability": null,
+      "pci_address": null,
+      "driver_version": null,
+      "bus_id": null,
+      "device_id": null
+    },
+    {
+      "processor_type": "gpu",
+      "vendor": "apple",
+      "model": "Apple M1 Pro GPU",
+      "cores": 0,
+      "threads": 0,
+      "frequency_mhz": 0.0,
+      "capabilities": [
+        "Metal",
+        "Neural Engine"
+      ],
+      "memory_gb": null,
+      "compute_capability": null,
+      "pci_address": null,
+      "driver_version": null,
+      "bus_id": null,
+      "device_id": null
+    }
+  ],
+  "memory": {
+    "total_gb": 16.0,
+    "available_gb": 8.0,
+    "used_gb": 8.0,
+    "swap_total_gb": 0.0,
+    "swap_used_gb": 0.0
+  },
+  "storage_devices": [],
+  "network_interfaces": [],
+  "boot_time": "Unknown",
+  "uptime_seconds": 0.0
+}

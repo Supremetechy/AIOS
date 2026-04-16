@@ -1,0 +1,53 @@
+# Cargo configuration for building AI-OS with embedded Python
+
+[package]
+name = "aios_kernel_python"
+version = "0.2.0"
+edition = "2021"
+
+[dependencies]
+# Existing dependencies from Cargo.toml
+spin = "0.9"
+lazy_static = { version = "1.4", features = ["spin_no_std"] }
+bitflags = "2.4"
+volatile = "0.5"
+x86_64 = "0.14"
+uart_16550 = "0.3"
+pic8259 = "0.11"
+pc-keyboard = "0.7"
+
+[dependencies.bootloader]
+version = "0.9"
+features = ["map_physical_memory"]
+
+# Python embedding
+[dependencies.pyo3]
+version = "0.20"
+features = ["auto-initialize"]
+default-features = false
+
+[build-dependencies]
+cc = "1.0"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+opt-level = "z"  # Optimize for size (Python stdlib is large)
+lto = true       # Link-time optimization
+codegen-units = 1
+
+[lib]
+crate-type = ["staticlib"]
+
+[[bin]]
+name = "aios_kernel"
+path = "src/main.rs"
+
+# Link with static Python library
+[package.metadata.python]
+version = "3.12"
+lib-name = "python3.12"
+lib-dir = "/usr/lib/python3.12"
+include-dir = "/usr/include/python3.12"

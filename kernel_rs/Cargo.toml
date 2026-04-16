@@ -1,0 +1,53 @@
+[package]
+name = "aios_kernel"
+version = "0.1.0"
+edition = "2021"
+authors = ["AI-OS Team"]
+
+[dependencies]
+spin = "0.9"           # Spinlock implementation
+lazy_static = { version = "1.4", features = ["spin_no_std"] }
+bitflags = "2.4"
+volatile = "0.5"
+x86_64 = "0.14"
+uart_16550 = "0.3"
+pic8259 = "0.11"
+pc-keyboard = "0.7"
+
+# For AI subsystem (FFI to llama.cpp)
+libc = { version = "0.2", default-features = false }
+
+# For network stack
+smoltcp = { version = "0.11", default-features = false, features = [
+    "proto-ipv4",
+    "proto-ipv6",
+    "socket-tcp",
+    "socket-udp",
+    "socket-dns",
+    "async",
+] }
+managed = { version = "0.8", default-features = false, features = ["map"] }
+heapless = "0.8"
+
+# For TLS/HTTPS
+rustls = { version = "0.23", default-features = false, features = ["alloc"] }
+webpki-roots = "0.26"
+rustls-pemfile = "2.0"
+
+[build-dependencies]
+# Optional: for generating bindings
+# bindgen = "0.69"
+
+[dependencies.bootloader]
+version = "0.9"
+features = ["map_physical_memory"]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[[bin]]
+name = "aios_kernel"
+path = "src/main.rs"

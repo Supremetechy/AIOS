@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# llama.cpp build artifacts (rebuild locally)
+llama.cpp
+llama.cpp/
+libllama.a
+
+# Rust build artifacts
+kernel_rs/target/
+
+# OS files
+.DS_Store
+Icon?
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# QODO
+.qodo/
+
+# Models (too large for git)
+models/*.bin
+models/*.gguf
+models/*.onnx
+
+# Onboarding videos (tracked via Git LFS or hosted externally)
+assets/onboarding_videos/*.mp4
+
+# Temp files
+*.tmp
+*.bak
