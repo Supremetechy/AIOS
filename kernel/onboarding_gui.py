@@ -26,6 +26,11 @@ except ImportError:
     print("PyQt6 not installed. Install with: pip install PyQt6 PyQt6-Multimedia")
     sys.exit(1)
 
+# Ensure the project root is importable regardless of how this file is launched
+_project_root = str(Path(__file__).resolve().parent.parent)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 try:
     from kernel.voice_assistant import VoiceOnboardingAssistant, parse_command
     VOICE_AVAILABLE = True
