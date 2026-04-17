@@ -160,11 +160,11 @@ def previous_step():
 
 def start_eel_app():
     try:
-        eel.start('index.html', size=(900, 700), port=8001) # Specify port
+        eel.start('index.html', size=(900, 700), port=8000)
     except Exception as e:
         print(f"Eel failed to start: {e}")
         print("Attempting to open in a regular web browser...")
-        eel.start('index.html', size=(900, 700), mode=None, port=8001) # Specify port for fallback
+        eel.start('index.html', size=(900, 700), mode=None, port=8000)
 
 if __name__ == '__main__':
     start_eel_app()
