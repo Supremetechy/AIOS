@@ -99,14 +99,15 @@ class AIAssistantVideos:
         return cls.VIDEOS.get(video_key)
 
 # --- Eel Application Setup ---
-WEB_FOLDER = 'web'
+_AIOS_ROOT = Path(__file__).resolve().parent.parent
+WEB_FOLDER = str(_AIOS_ROOT / 'web')
 eel.init(WEB_FOLDER)
 
 # This is a more direct way to serve static files with Bottle
 # It needs to be done before eel.start()
 @bottle.route('/assets/<filename:path>')
 def serve_static_assets(filename):
-    return bottle.static_file(filename, root=str(Path("assets")))
+    return bottle.static_file(filename, root=str(_AIOS_ROOT / "assets"))
 
 # Global instance of config
 onboarding_config = OnboardingConfig()
