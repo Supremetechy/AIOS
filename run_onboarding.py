@@ -1,34 +1,32 @@
 #!/usr/bin/env python3
 """
 AI-OS Onboarding Launcher
-Starts the GUI-based onboarding wizard
+Starts the Eel-based onboarding wizard
 """
 
 import sys
 import os
 from pathlib import Path
 
-# Add kernel directory to path
+# Ensure the project root is importable
 sys.path.insert(0, str(Path(__file__).parent))
+
 
 def check_dependencies():
     """Check if required dependencies are installed"""
-    has_pyqt6 = False
-    has_multimedia = False
-    
+    missing = []
+
     try:
-        import PyQt6
-        has_pyqt6 = True
+        import eel
     except ImportError:
-        pass
-    
+        missing.append("eel")
+
     try:
-        from PyQt6 import QtMultimedia
-        has_multimedia = True
+        import bottle
     except ImportError:
-        pass
-    
-    return has_pyqt6, has_multimedia
+        missing.append("bottle")
+
+    return missing
 
 
 def main():
@@ -37,31 +35,28 @@ def main():
     print("AI-OS Onboarding Wizard")
     print("=" * 60)
     print()
-    
+
     # Check dependencies
-    has_pyqt6, has_multimedia = check_dependencies()
-    
-    if not has_pyqt6:
-        print("❌ PyQt6 not installed!")
-        print("\nInstall with:")
-        print("   pip install PyQt6")
+    missing = check_dependencies()
+
+    if missing:
+        print(f"Missing dependencies: {', '.join(missing)}")
+        print(f"\nInstall with:")
+        print(f"   pip install {' '.join(missing)}")
         sys.exit(1)
-    
-    # Use fallback version if multimedia is not available
-    if not has_multimedia:
-        print("⚠️  PyQt6-Multimedia not available")
-        print("   Using fallback version (video placeholders only)")
-        print()
-        from kernel.onboarding_gui_fallback import main as run_gui
-    else:
-        print("✓ Full video support available")
-        print()
-        from kernel.onboarding_gui import main as run_gui
-    
-    print("✓ Starting onboarding wizard...")
+
+    # Verify web folder exists
+    web_folder = Path(__file__).parent / "web"
+    if not web_folder.is_dir():
+        print(f"Web folder not found at: {web_folder}")
+        print("The onboarding UI requires the web/ directory.")
+        sys.exit(1)
+
+    print("Starting onboarding wizard...")
     print()
-    
-    run_gui()
+
+    from kernel.onboarding_gui import start_eel_app
+    start_eel_app()
 
 
 if __name__ == "__main__":
