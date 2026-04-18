@@ -8,43 +8,191 @@
     <link rel="stylesheet" href="style.css">
     <!-- Three.js loaded via esm.sh in binary-avatar.js — no import map needed -->
     <style>
-        /* ── Avatar pod overrides for Johnny Mnemonic style ── */
+        /* ══════════════════════════════════════════════════════════
+           JOHNNY MNEMONIC / LO-TEK CYBERSPACE THEME OVERRIDE
+           Replaces the default amber command-bridge palette with
+           Matrix green, electric cyan, CRT black.
+           ══════════════════════════════════════════════════════════ */
+        :root {
+          --bg-0:   #000000;
+          --bg-1:   #020a04;
+          --bg-2:   #041208;
+          --ink-0:  #00ff41;
+          --ink-1:  #00cc33;
+          --ink-2:  #007a1f;
+          --line:   rgba(0, 255, 65, 0.08);
+          --line-2: rgba(0, 255, 65, 0.20);
+
+          --accent:      #00ffff;
+          --accent-hi:   #80ffff;
+          --accent-dim:  #007a7a;
+          --accent-glow: 0, 255, 255;
+
+          --live:      #00ff41;
+          --live-glow: 0, 255, 65;
+
+          --f-display: 'JetBrains Mono', 'Courier New', monospace;
+          --f-body:    'JetBrains Mono', 'Courier New', monospace;
+          --f-mono:    'JetBrains Mono', 'Courier New', monospace;
+        }
+
+        html, body {
+          background: #000;
+          color: #00ff41;
+          font-family: 'JetBrains Mono', 'Courier New', monospace;
+        }
+
+        /* ── Background layers: cyberspace grid ── */
+        .bg-grid {
+          background-image:
+            linear-gradient(rgba(0,255,65,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,255,65,0.06) 1px, transparent 1px);
+          background-size: 48px 48px;
+          opacity: 0.7;
+        }
+        .bg-glow {
+          background:
+            radial-gradient(ellipse 50% 40% at 30% 40%, rgba(0,255,65,0.10), transparent 60%),
+            radial-gradient(ellipse 40% 30% at 75% 65%, rgba(0,255,255,0.06), transparent 70%);
+        }
+
+        /* ── Telemetry strip ── */
+        .telemetry {
+          border-bottom-color: rgba(0,255,65,0.15);
+          background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+        }
+        .tel-dot {
+          background: #00ff41;
+          box-shadow: 0 0 10px rgba(0,255,65,0.9);
+        }
+        .tel-clock { color: #00ffff; }
+
+        /* ── Header ── */
+        h1 { font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: -0.01em; }
+        .h1-label { color: #00cc33; }
+        .h1-emph { color: #00ffff; font-style: normal; text-shadow: 0 0 20px rgba(0,255,255,0.4); }
+        .eyebrow .mark { color: #00ff41; }
+
+        /* ── Progress gauge ── */
+        .gauge-fill {
+          background: linear-gradient(90deg, #007a1f, #00ff41);
+          box-shadow: 0 0 16px rgba(0,255,65,0.6), inset 0 0 0 1px rgba(0,255,65,0.5);
+        }
+        .gauge-readout { color: #00ffff; }
+
+        /* ── Panels ── */
+        .panel {
+          background: linear-gradient(180deg, rgba(0,20,8,0.6), rgba(0,10,4,0.8));
+          border: 1px solid rgba(0,255,65,0.15);
+          backdrop-filter: blur(6px);
+        }
+        .panel::before {
+          background: linear-gradient(90deg, transparent, rgba(0,255,65,0.12), transparent);
+        }
+        .panel-corners span { border-color: #00ff41; }
+
+        /* ── Avatar pod ── */
+        .pod-status { color: #00ff41; }
+        .pulse {
+          background: #00ff41;
+          box-shadow: 0 0 12px rgba(0,255,65,0.9);
+        }
+        .pod-stage {
+          background:
+            radial-gradient(ellipse at 50% 40%, rgba(0,255,65,0.08), transparent 65%),
+            linear-gradient(180deg, #010d05, #000000);
+          box-shadow: inset 0 0 0 1px rgba(0,255,65,0.1), inset 0 40px 80px -40px rgba(0,255,65,0.10);
+        }
+        .hud-k { color: #007a1f; }
+        .hud-v { color: #00ffff; }
+        .hud-bars span { background: #004d13; }
+        .hud-bars.active span { background: #00ff41; }
+
+        /* ── Content panel ── */
+        .meta-k { color: #00ff41; }
+        .meta-v { color: #00ffff; }
+        .content-panel h2 {
+          font-family: 'JetBrains Mono', monospace;
+          color: #00ff41;
+          text-shadow: 0 0 15px rgba(0,255,65,0.3);
+        }
+        #agent-line { color: #00cc33; }
+        .content-footer { border-top-color: rgba(0,255,65,0.12); color: #007a1f; }
+
+        /* ── Buttons ── */
+        .btn-primary {
+          background: #00ff41;
+          color: #000;
+          box-shadow:
+            0 0 0 1px rgba(0,255,65,0.5),
+            0 10px 30px -10px rgba(0,255,65,0.5),
+            inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .btn-primary:hover {
+          background: #00ffff;
+          box-shadow:
+            0 0 0 1px rgba(0,255,255,0.6),
+            0 14px 36px -10px rgba(0,255,255,0.7),
+            inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+        #prev-button {
+          color: #00cc33 !important;
+          border-color: rgba(0,255,65,0.25) !important;
+        }
+        #prev-button:hover {
+          border-color: #00ff41 !important;
+          color: #00ff41 !important;
+          background: rgba(0,255,65,0.06) !important;
+        }
+
+        /* ── Signature ── */
+        .signature { color: #007a1f; }
+
+        /* ── Boot animation: green blur ── */
+        @keyframes boot {
+          to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        /* ── Scanline overlay across entire page ── */
+        body::after {
+          content: '';
+          position: fixed; inset: 0; z-index: 9999;
+          pointer-events: none;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent 0px, transparent 2px,
+            rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px
+          );
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           AVATAR-SPECIFIC STYLES
+           ══════════════════════════════════════════════════════════ */
         #agent-avatar {
             position: relative;
-            width: 100%;
-            height: 100%;
-            min-height: 400px;
+            width: 100%; height: 100%; min-height: 400px;
             background: #000;
             border-radius: 10px;
             overflow: hidden;
         }
-
         #binary-avatar-container {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            inset: 0;
+            width: 100%; height: 100%;
+            position: absolute; inset: 0;
         }
 
         /* Status badge */
         #avatar-status {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.75);
-            border: 1px solid rgba(0, 255, 65, 0.3);
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0,0,0,0.75);
+            border: 1px solid rgba(0,255,65,0.3);
             padding: 4px 10px;
             font: 500 9px/1 'JetBrains Mono', monospace;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: #00ff41;
-            z-index: 10;
-            border-radius: 3px;
+            letter-spacing: 0.2em; text-transform: uppercase;
+            color: #00ff41; z-index: 10; border-radius: 3px;
         }
         .status-dot {
             display: inline-block;
-            width: 6px; height: 6px;
-            border-radius: 50%;
+            width: 6px; height: 6px; border-radius: 50%;
             margin-right: 6px;
             background: #00ff41;
             box-shadow: 0 0 8px #00ff41;
@@ -52,44 +200,34 @@
         }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-        /* Holographic scanline band across avatar */
+        /* CRT scanlines on avatar */
         #agent-avatar::after {
             content: '';
-            position: absolute;
-            inset: 0;
+            position: absolute; inset: 0;
             pointer-events: none;
             background: repeating-linear-gradient(
-                0deg,
-                transparent 0px, transparent 2px,
-                rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px
+                0deg, transparent 0px, transparent 2px,
+                rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
             );
             z-index: 5;
         }
 
-        /* Voice controls overlay */
+        /* Voice controls */
         #voice-controls {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
+            position: absolute; bottom: 10px; left: 50%;
             transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: flex; align-items: center; gap: 10px;
             z-index: 10;
-            background: rgba(0,0,0,0.65);
+            background: rgba(0,0,0,0.7);
             border: 1px solid rgba(0,255,65,0.25);
-            border-radius: 20px;
-            padding: 6px 14px;
+            border-radius: 20px; padding: 6px 14px;
             backdrop-filter: blur(4px);
         }
         #voice-controls .mic-btn {
-            width: 28px; height: 28px;
-            border-radius: 50%;
+            width: 28px; height: 28px; border-radius: 50%;
             background: transparent;
             border: 1px solid rgba(0,255,65,0.4);
-            color: #00ff41;
-            cursor: pointer;
-            font-size: 13px;
+            color: #00ff41; cursor: pointer; font-size: 13px;
             display: flex; align-items: center; justify-content: center;
             transition: all 0.3s;
         }
@@ -105,33 +243,45 @@
         #voice-controls .voice-text {
             font: 400 9px/1 'JetBrains Mono', monospace;
             color: rgba(0,255,65,0.5);
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
+            letter-spacing: 0.15em; text-transform: uppercase;
         }
 
-        /* Avatar placeholder */
+        /* Placeholder */
         #avatar-placeholder {
-            position: absolute; inset: 0;
-            display: none;
+            position: absolute; inset: 0; display: none;
             align-items: center; justify-content: center;
             flex-direction: column; gap: 10px;
             font: 400 10px/1 'JetBrains Mono', monospace;
-            letter-spacing: 0.25em;
-            color: rgba(0,255,65,0.3);
+            letter-spacing: 0.25em; color: rgba(0,255,65,0.3);
             text-transform: uppercase;
         }
-
-        /* Hide legacy video */
-        #avatar-video { display: none; }
-
-        /* Suppress container when avatar loads */
-        #binary-avatar-container:not(:empty) ~ #avatar-placeholder {
-            display: none !important;
+        .loader-ring {
+          border-color: rgba(0,255,65,0.15);
+          border-top-color: #00ff41;
         }
+        #avatar-video { display: none; }
+        #binary-avatar-container:not(:empty) ~ #avatar-placeholder { display: none !important; }
+
+        /* ── Corner brackets (full page) ── */
+        .corner-bracket {
+          position: fixed; z-index: 8; pointer-events: none;
+          width: 24px; height: 24px;
+          border: 1px solid rgba(0,255,65,0.3);
+        }
+        .cb-tl { top: 4px; left: 4px; border-right: none; border-bottom: none; }
+        .cb-tr { top: 4px; right: 4px; border-left: none; border-bottom: none; }
+        .cb-bl { bottom: 4px; left: 4px; border-right: none; border-top: none; }
+        .cb-br { bottom: 4px; right: 4px; border-left: none; border-top: none; }
     </style>
 </head>
 <body>
-    <!-- Background layers from style.css -->
+    <!-- Corner brackets -->
+    <div class="corner-bracket cb-tl"></div>
+    <div class="corner-bracket cb-tr"></div>
+    <div class="corner-bracket cb-bl"></div>
+    <div class="corner-bracket cb-br"></div>
+
+    <!-- Background layers -->
     <div class="bg-layer bg-grid"></div>
     <div class="bg-layer bg-glow"></div>
     <div class="bg-layer bg-noise"></div>
