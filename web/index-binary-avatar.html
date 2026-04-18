@@ -6,16 +6,7 @@
     <title>AIOS — Neural Interface Onboarding</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>⚡</text></svg>">
     <link rel="stylesheet" href="style.css">
-    <!-- es-module-shims: polyfills import maps for browsers / extensions that break them -->
-    <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.1/dist/es-module-shims.js"></script>
-    <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/": "https://cdn.jsdelivr.net/npm/three@0.160.0/"
-      }
-    }
-    </script>
+    <!-- Three.js loaded via esm.sh in binary-avatar.js — no import map needed -->
     <style>
         /* ── Avatar pod overrides for Johnny Mnemonic style ── */
         #agent-avatar {
