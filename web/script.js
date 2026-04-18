@@ -65,21 +65,26 @@ document.addEventListener('DOMContentLoaded', () => {
            typeof eel.previous_step === 'function';
   }
 
-  async function waitForEel(timeout = 5000) {
+  async function waitForEel(timeout = 8000) {
     const start = Date.now();
     while (!eelReady()) {
       if (Date.now() - start > timeout) {
-        console.error('[AIOS] Eel bridge not available — is the Python backend running?');
+        console.warn('[AIOS] Eel bridge not available — running in standalone mode');
         return false;
       }
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 150));
     }
     return true;
   }
 
   async function loadStepData() {
     if (!eelReady()) {
-      if (!(await waitForEel())) return;
+      if (!(await waitForEel())) {
+        // Standalone mode — avatar still works, just no step navigation
+        console.log('[AIOS] Running without Eel — avatar-only mode');
+        nextButton.style.display = 'none';
+        return;
+      }
     }
     const stepData = await eel.get_current_step_data()();
     if (!stepData) return;

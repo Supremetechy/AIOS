@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIOS — Johnny Mnemonic Neural Interface</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>⚡</text></svg>">
+    <!-- es-module-shims: polyfills import maps for browsers / extensions that break them -->
+    <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.1/dist/es-module-shims.js"></script>
     <script type="importmap">
     {
       "imports": {
@@ -223,6 +226,8 @@
           border: 1px solid var(--border);
           border-radius: 8px;
           backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          -webkit-text-stroke: 0.5px var(--green);
           font-size: 14px; line-height: 1.6;
           color: var(--green);
           text-shadow: 0 0 8px rgba(0,255,65,0.3);
@@ -349,7 +354,7 @@
         <div style="display:flex; flex-direction:column; gap:8px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span class="state-key">Palette</span>
-                <select id="palette-select">
+                <select id="palette-select" onchange="avatar.renderer.setColorPalette(this.value)" oninput="avatar.renderer.setColorPalette(this.value)" name="Board">
                     <option value="matrix">Matrix Green</option>
                     <option value="cyan">Electric Cyan</option>
                     <option value="cyber-magenta">Cyber Magenta</option>
@@ -360,7 +365,12 @@
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span class="state-key">Activity</span>
-                <select id="activity-select">
+                <select 
+                    id="activity-select" 
+                    onchange="avatar.renderer.setActivity(this.value)" oninput="avatar.renderer.setActivity(this.value)" 
+                    name="Activity"
+                    style="width:100px"
+                        >
                     <option value="idle">Idle</option>
                     <option value="thinking">Thinking</option>
                     <option value="speaking">Speaking</option>
