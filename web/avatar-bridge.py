@@ -156,7 +156,7 @@ class AvatarBridgeServer:
         logger.warning("Using fallback TTS engine")
         return FallbackTTSEngine()
     
-    async def handle_client(self, websocket, path):
+    async def handle_client(self, websocket, path=None):
         """Handle WebSocket client connection"""
         logger.info(f"Client connected: {websocket.remote_address}")
         self.clients.add(websocket)
