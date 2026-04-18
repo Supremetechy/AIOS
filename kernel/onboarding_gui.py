@@ -264,8 +264,8 @@ def start_avatar_bridge() -> Optional[subprocess.Popen]:
         from TTS.api import TTS  # noqa: F401
         tts_engine = "coqui"
         logger.info("Coqui TTS available — using high-fidelity voice")
-    except ImportError:
-        logger.info("Coqui TTS not installed — avatar will use browser TTS")
+    except Exception as e:
+        logger.info(f"Coqui TTS not available ({e}) — avatar will use browser TTS")
 
     logger.info("Starting avatar WebSocket bridge...")
     proc = subprocess.Popen(
