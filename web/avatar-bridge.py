@@ -235,11 +235,13 @@ class AvatarBridgeServer:
         try:
             cpu_percent = psutil.cpu_percent(interval=0.1)
             memory = psutil.virtual_memory()
-            
+            disk = psutil.disk_usage("/")
+
             status = {
                 'cpu_usage': cpu_percent,
                 'memory_usage': memory.percent,
-                'memory_available_gb': memory.available / (1024 ** 3)
+                'memory_available_gb': memory.available / (1024 ** 3),
+                'disk_usage': disk.percent,
             }
             
             await websocket.send(json.dumps({

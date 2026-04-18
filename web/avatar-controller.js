@@ -9,48 +9,40 @@ class AvatarController {
   constructor(container, options = {}) {
     this.container = container;
     this.options = options;
-    
-    // Initialize binary avatar renderer
+
     this.renderer = new BinaryAvatarRenderer(container, {
       colorPalette: options.colorPalette || 'matrix',
       ...options
     });
 
-    // Audio context for speech analysis
     this.audioContext = null;
     this.analyser = null;
     this.frequencyData = null;
-    
-    // Speech queue
+
     this.speechQueue = [];
     this.isSpeaking = false;
-    
-    // WebSocket for backend communication
+
     this.ws = null;
     this.wsReconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
+    this.usingFallback = false;
 
-    // State
     this.currentEmotion = 'neutral';
     this.currentActivity = 'idle';
-    
+
+    this._voicesLoaded = false;
+
     this.init();
   }
 
   async init() {
-    // Initialize audio context (requires user gesture)
     this.initAudioContext();
-    
-    // Connect to backend WebSocket
+    this.preloadVoices();
     this.connectWebSocket();
-    
-    // Start monitoring loop
     this.startMonitoring();
   }
 
   initAudioContext() {
-    // Audio context must be created after user gesture
-    // We'll initialize it on first interaction
     document.addEventListener('click', () => {
       if (!this.audioContext) {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -62,7 +54,23 @@ class AvatarController {
     }, { once: true });
   }
 
+  preloadVoices() {
+    if (!window.speechSynthesis) return;
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      this._voicesLoaded = true;
+      return;
+    }
+    window.speechSynthesis.addEventListener('voiceschanged', () => {
+      this._voicesLoaded = true;
+    }, { once: true });
+  }
+
+  // ── WebSocket ──────────────────────────────────────────────────────
+
   connectWebSocket() {
+    if (this.usingFallback) return;
+
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${wsProtocol}//${window.location.hostname}:8765`;
 
@@ -70,7 +78,7 @@ class AvatarController {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log('[Avatar] WebSocket connected to Piper TTS backend');
+        console.log('[Avatar] WebSocket connected to TTS backend');
         this.wsReconnectAttempts = 0;
         this.renderer.setActivity('idle');
       };
@@ -80,19 +88,15 @@ class AvatarController {
       };
 
       this.ws.onerror = () => {
-        // Silence repeated errors — onclose handles fallback
+        // onclose handles retry/fallback
       };
 
       this.ws.onclose = () => {
-        if (this.wsReconnectAttempts === 0) {
-          console.log('[Avatar] Piper TTS server not running — using Web Speech API');
-          this.useFallbackMode();
-        } else {
-          this.attemptReconnect();
-        }
+        this.ws = null;
+        this.attemptReconnect();
       };
     } catch (error) {
-      this.useFallbackMode();
+      this.attemptReconnect();
     }
   }
 
@@ -100,7 +104,8 @@ class AvatarController {
     if (this.usingFallback) return;
     if (this.wsReconnectAttempts < this.maxReconnectAttempts) {
       this.wsReconnectAttempts++;
-      const delay = Math.min(1000 * Math.pow(2, this.wsReconnectAttempts), 30000);
+      const delay = Math.min(1000 * Math.pow(2, this.wsReconnectAttempts), 10000);
+      console.log(`[Avatar] WS reconnect attempt ${this.wsReconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
       setTimeout(() => this.connectWebSocket(), delay);
     } else {
       this.useFallbackMode();
@@ -117,39 +122,33 @@ class AvatarController {
   handleWebSocketMessage(data) {
     try {
       const message = JSON.parse(data);
-      
+
       switch (message.type) {
         case 'audio_chunk':
           this.playAudioChunk(message.data);
           break;
-        
         case 'state_update':
           this.updateState(message.state);
           break;
-        
         case 'emotion':
           this.setEmotion(message.emotion);
           break;
-        
         case 'system_status':
           this.updateSystemStatus(message.status);
           break;
-        
         default:
-          console.warn('[Avatar] Unknown message type:', message.type);
+          break;
       }
     } catch (error) {
       console.error('[Avatar] Error parsing WebSocket message:', error);
     }
   }
 
+  // ── Speech ─────────────────────────────────────────────────────────
+
   async speak(text, options = {}) {
     const emotion = options.emotion || 'neutral';
-    
-    // Add to speech queue
     this.speechQueue.push({ text, emotion, options });
-    
-    // Process queue if not already speaking
     if (!this.isSpeaking) {
       await this.processSpeechQueue();
     }
@@ -163,48 +162,52 @@ class AvatarController {
     }
 
     this.isSpeaking = true;
-    const { text, emotion, options } = this.speechQueue.shift();
-    
+    const { text, emotion } = this.speechQueue.shift();
+
     this.setEmotion(emotion);
     this.renderer.setActivity('speaking');
 
     try {
       if (this.ws && this.ws.readyState === WebSocket.OPEN && !this.usingFallback) {
-        // Use backend TTS (Coqui or Piper)
         await this.speakViaBackend(text, emotion);
       } else {
-        // Use Web Speech API fallback
         await this.speakViaWebSpeech(text);
       }
     } catch (error) {
-      console.error('[Avatar] Speech error:', error);
+      console.warn('[Avatar] Speech error, trying fallback:', error.message);
+      try {
+        await this.speakViaWebSpeech(text);
+      } catch (e) {
+        console.error('[Avatar] All speech methods failed:', e);
+      }
     }
 
-    // Process next item in queue
     await this.processSpeechQueue();
   }
 
   async speakViaBackend(text, emotion) {
     return new Promise((resolve, reject) => {
-      // Send TTS request to backend
+      const requestId = Date.now() + '_' + Math.random().toString(36).slice(2);
+
       this.ws.send(JSON.stringify({
         type: 'tts_request',
         text: text,
-        emotion: emotion
+        emotion: emotion,
+        request_id: requestId
       }));
 
-      // Set up completion handler
       const completionHandler = (event) => {
-        const message = JSON.parse(event.data);
-        if (message.type === 'tts_complete') {
-          this.ws.removeEventListener('message', completionHandler);
-          resolve();
-        }
+        try {
+          const message = JSON.parse(event.data);
+          if (message.type === 'tts_complete') {
+            this.ws.removeEventListener('message', completionHandler);
+            resolve();
+          }
+        } catch (e) {}
       };
 
       this.ws.addEventListener('message', completionHandler);
 
-      // Timeout after 30 seconds
       setTimeout(() => {
         this.ws.removeEventListener('message', completionHandler);
         reject(new Error('TTS timeout'));
@@ -219,86 +222,120 @@ class AvatarController {
         return;
       }
 
+      // Cancel any stuck utterances
+      window.speechSynthesis.cancel();
+
       const utterance = new SpeechSynthesisUtterance(text);
-      
-      // Configure voice
+
+      // Select voice — voices may load asynchronously
       const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(v => v.lang.startsWith('en'));
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
+      if (voices.length > 0) {
+        const preferred = voices.find(v =>
+          v.lang === 'en-US' && v.localService
+        ) || voices.find(v =>
+          v.lang.startsWith('en')
+        );
+        if (preferred) utterance.voice = preferred;
       }
-      
+
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
 
-      // Analyze audio during speech
       utterance.onstart = () => {
-        this.startAudioAnalysis();
+        this.renderer.setActivity('speaking');
+        this.startSpeechVolumeSimulation();
       };
 
       utterance.onend = () => {
-        this.stopAudioAnalysis();
+        this.stopSpeechVolumeSimulation();
         resolve();
       };
 
       utterance.onerror = (event) => {
-        this.stopAudioAnalysis();
-        reject(event);
+        this.stopSpeechVolumeSimulation();
+        if (event.error === 'canceled' || event.error === 'interrupted') {
+          resolve();
+        } else {
+          reject(new Error(event.error || 'speech error'));
+        }
       };
+
+      // Chrome bug: speechSynthesis can hang after ~15s. Resume it.
+      this._speechResumeInterval = setInterval(() => {
+        if (window.speechSynthesis.speaking) {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }
+      }, 10000);
 
       window.speechSynthesis.speak(utterance);
     });
   }
 
+  // Simulate volume from speech (Web Speech API doesn't expose audio data)
+  startSpeechVolumeSimulation() {
+    this._simVolume = true;
+    const simulate = () => {
+      if (!this._simVolume) return;
+      const vol = 0.3 + Math.random() * 0.5;
+      this.renderer.setVolume(vol);
+      setTimeout(simulate, 80 + Math.random() * 60);
+    };
+    simulate();
+  }
+
+  stopSpeechVolumeSimulation() {
+    this._simVolume = false;
+    this.renderer.setVolume(0);
+    if (this._speechResumeInterval) {
+      clearInterval(this._speechResumeInterval);
+      this._speechResumeInterval = null;
+    }
+  }
+
   playAudioChunk(audioData) {
     if (!this.audioContext) return;
 
-    // Decode and play audio chunk from backend
     const audioBuffer = this.base64ToArrayBuffer(audioData);
-    
+
     this.audioContext.decodeAudioData(audioBuffer, (buffer) => {
       const source = this.audioContext.createBufferSource();
       source.buffer = buffer;
-      
-      // Connect to analyser for visualization
       source.connect(this.analyser);
       this.analyser.connect(this.audioContext.destination);
-      
       source.start(0);
-      
-      // Start audio-reactive animation
+
       if (!this.isAnalyzing) {
         this.startAudioAnalysis();
       }
+    }).catch(err => {
+      console.warn('[Avatar] Audio decode error:', err.message);
     });
   }
 
   startAudioAnalysis() {
     if (this.isAnalyzing || !this.analyser) return;
-    
+
     this.isAnalyzing = true;
-    
+
     const analyze = () => {
       if (!this.isAnalyzing) return;
-      
-      // Get frequency data
+
       this.analyser.getByteFrequencyData(this.frequencyData);
-      
-      // Calculate average volume
+
       let sum = 0;
       for (let i = 0; i < this.frequencyData.length; i++) {
         sum += this.frequencyData[i];
       }
       const avgVolume = sum / this.frequencyData.length / 255;
-      
-      // Update avatar
+
       this.renderer.setVolume(avgVolume);
       this.renderer.setFrequencyData(this.frequencyData);
-      
+
       requestAnimationFrame(analyze);
     };
-    
+
     analyze();
   }
 
@@ -307,11 +344,12 @@ class AvatarController {
     this.renderer.setVolume(0);
   }
 
+  // ── State ──────────────────────────────────────────────────────────
+
   setEmotion(emotion) {
     this.currentEmotion = emotion;
     this.renderer.setEmotion(emotion);
-    
-    // Optionally change color palette based on emotion
+
     const emotionPalettes = {
       'happy': 'cyan',
       'neutral': 'matrix',
@@ -319,59 +357,50 @@ class AvatarController {
       'error': 'red',
       'excited': 'cyber-magenta'
     };
-    
+
     const palette = emotionPalettes[emotion];
-    if (palette) {
+    if (palette && this.renderer.digitMesh) {
       this.renderer.options.colorPalette = palette;
       this.renderer.digitMesh.material.uniforms.uColorPalette.value = this.renderer.getColorPalette();
+      if (this.renderer.rainPoints) {
+        this.renderer.rainPoints.material.uniforms.uColor.value = this.renderer.getColorPalette();
+      }
     }
   }
 
   updateState(state) {
-    if (state.activity) {
-      this.renderer.setActivity(state.activity);
-    }
-    if (state.emotion) {
-      this.setEmotion(state.emotion);
-    }
-    if (state.cpuLoad !== undefined) {
-      this.renderer.setState({ cpuLoad: state.cpuLoad });
-    }
+    if (state.activity) this.renderer.setActivity(state.activity);
+    if (state.emotion) this.setEmotion(state.emotion);
+    if (state.cpuLoad !== undefined) this.renderer.setState({ cpuLoad: state.cpuLoad });
   }
 
   updateSystemStatus(status) {
-    // Update visualization based on system status
     if (status.cpu_usage > 80) {
       this.renderer.setActivity('thinking');
     }
   }
 
   startMonitoring() {
-    // Periodic state updates (even without WebSocket)
     setInterval(() => {
-      // Request system stats if WebSocket is available
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({
-          type: 'request_status'
-        }));
+        this.ws.send(JSON.stringify({ type: 'request_status' }));
       }
     }, 5000);
   }
 
   stop() {
-    // Stop current speech
     this.speechQueue = [];
     this.isSpeaking = false;
     this.stopAudioAnalysis();
-    
+    this.stopSpeechVolumeSimulation();
+
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
-    
+
     this.renderer.setActivity('idle');
   }
 
-  // Utility methods
   base64ToArrayBuffer(base64) {
     const binaryString = window.atob(base64);
     const len = binaryString.length;
@@ -384,23 +413,14 @@ class AvatarController {
 
   destroy() {
     this.stop();
-    
-    if (this.ws) {
-      this.ws.close();
-    }
-    
-    if (this.audioContext) {
-      this.audioContext.close();
-    }
-    
+    if (this.ws) this.ws.close();
+    if (this.audioContext) this.audioContext.close();
     this.renderer.destroy();
   }
 }
 
-// Export for use in other modules
 export { AvatarController };
 
-// Global API for backward compatibility
 if (typeof window !== 'undefined') {
   window.AIOS = window.AIOS || {};
   window.AIOS.AvatarController = AvatarController;
