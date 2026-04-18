@@ -310,7 +310,7 @@ class BinaryAvatarRenderer {
       uniform float uActivity;
       uniform float uScanY;
 
-      attribute vec3 instanceColor;
+      // instanceColor is auto-injected by Three.js InstancedMesh
 
       varying vec2 vUv;
       varying float vDigitType;
