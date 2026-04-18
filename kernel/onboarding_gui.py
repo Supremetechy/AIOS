@@ -301,6 +301,14 @@ def stop_avatar_bridge():
 def start_eel_app():
     """Launch the unified AIOS onboarding + avatar UI."""
     bridge = start_avatar_bridge()
+    
+    # Setup voice command handlers
+    try:
+        from kernel.voice_commands import setup_voice_commands_for_eel
+        voice_cmds = setup_voice_commands_for_eel(eel)
+        logger.info("Voice commands enabled")
+    except Exception as e:
+        logger.warning(f"Voice commands not available: {e}")
 
     def cleanup(signum=None, frame=None):
         stop_avatar_bridge()
@@ -312,7 +320,7 @@ def start_eel_app():
     try:
         logger.info("Starting AIOS onboarding UI on http://localhost:8000 ...")
         eel.start(
-            "index-binary-avatar.html",
+            "index-voice-enabled.html",  # Use voice-enabled interface
             host="localhost",
             port=8000,
             size=(1280, 800),
@@ -325,7 +333,7 @@ def start_eel_app():
         logger.warning(f"Chrome/Edge app mode unavailable ({e}), opening in browser")
         try:
             eel.start(
-                "index-binary-avatar.html",
+                "index-voice-enabled.html",  # Use voice-enabled interface
                 host="localhost",
                 port=8000,
                 size=(1280, 800),

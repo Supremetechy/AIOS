@@ -84,10 +84,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const stepData = await eel.get_current_step_data()();
     if (!stepData) return;
 
-    document.querySelector('h1').textContent =
-      `AIOS Setup Wizard - Step ${stepData.index + 1} of ${stepData.total_steps}`;
-    onboardingContent.querySelector('h2').textContent = stepData.title;
-    onboardingContent.querySelector('p').textContent  = stepData.description;
+    // Update step title/description — support both id-based and tag-based elements
+    const h1 = document.querySelector('h1');
+    if (h1) h1.textContent = `AIOS Setup Wizard - Step ${stepData.index + 1} of ${stepData.total_steps}`;
+
+    const h2 = document.getElementById('step-title') || onboardingContent.querySelector('h2');
+    if (h2) h2.textContent = stepData.title;
+
+    const desc = document.getElementById('agent-line') || onboardingContent.querySelector('p');
+    if (desc) desc.textContent = stepData.description;
 
     // Avatar source of truth: prefer live avatar, fall back to video if a
     // step explicitly specifies video_url (back-compat with your old data).
