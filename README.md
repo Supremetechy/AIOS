@@ -1,3 +1,6 @@
+<img width="920" height="920" alt="image" src="https://github.com/user-attachments/assets/5be57da8-f4a1-4cd1-81c9-e7d4621ff6d6" />
+
+
 For speech synthesis (TTS), install Coqui TTS:
 
 ```bash
